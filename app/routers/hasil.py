@@ -27,7 +27,6 @@ class DiagnosisRequest(BaseModel):
 class DiagnosisResponse(BaseModel):
     penyakit: str
     keyakinan: float
-
 @router.post("/diagnosis")
 async def diagnosis(
     user: user_dependency, diagnosis_request: DiagnosisRequest, db: db_dependency
@@ -42,10 +41,11 @@ async def diagnosis(
 
     # Hitung CF untuk setiap penyakit berdasarkan gejala
     for penyakit in db.query(Penyakit).all():
-        cf_total_temp = 0
+        cf_total_temp = Decimal(0)
+        cf_total_temp = cf_total_temp.quantize(Decimal('0.00'))
         for gejala in kondisi:
             gejala_id = gejala['gejala_id']
-            bobot = Decimal(gejala['bobot'])  # Konversi bobot menjadi Decimal
+            bobot = Decimal(gejala['bobot']).quantize(Decimal('0.00')) # Konversi bobot menjadi Decimal
             basis_pengetahuan = db.query(BasisPengetahuan).filter(
                 BasisPengetahuan.gejala_id == gejala_id,
                 BasisPengetahuan.penyakit_id == penyakit.id
@@ -63,6 +63,8 @@ async def diagnosis(
                     cf_total_temp += cf * (1 + cf_total_temp)
 
         if cf_total_temp > threshold:
+            # Membatasi hanya dua angka di belakang koma
+            cf_total_temp = cf_total_temp.quantize(Decimal('0.00'))
             penyakit_cf[penyakit.nama] = cf_total_temp
     
     # Urutkan penyakit berdasarkan keyakinan (CF) dari yang tertinggi
