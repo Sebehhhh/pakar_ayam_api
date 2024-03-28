@@ -39,7 +39,13 @@ class BasisPengetahuan(Base):
     gejala_id = Column(Integer, ForeignKey("gejala.id"))
     mb = Column(Float(11, 1))
     md = Column(Float(11, 1))
+    
+class Kondisi(Base):
+    __tablename__ = "kondisi"
 
+    id = Column(Integer, primary_key=True, index=True)
+    kondisi = Column(String(64), nullable=False)
+    
 class Hasil(Base):
     __tablename__ = "hasil"
 
@@ -47,9 +53,4 @@ class Hasil(Base):
     penyakit = Column(Text, nullable=False)
     gejala = Column(Text, nullable=False)
     nilai = Column(String(16), nullable=False)
-    
-class Kondisi(Base):
-    __tablename__ = "kondisi"
-
-    id = Column(Integer, primary_key=True, index=True)
-    kondisi = Column(String(64), nullable=False)
+    tanggal = Column(DateTime, nullable=False)

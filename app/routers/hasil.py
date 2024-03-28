@@ -1,10 +1,10 @@
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-
-from app.models import BasisPengetahuan, Penyakit
+from datetime import datetime
+from app.models import BasisPengetahuan, Penyakit, Gejala, Hasil  # Tambahkan model Hasil
 from app.database import SessionLocal
 from .auth import get_current_user
 
@@ -26,7 +26,12 @@ class DiagnosisRequest(BaseModel):
 
 class DiagnosisResponse(BaseModel):
     penyakit: str
-    keyakinan: float
+    gejala: List[str]
+    kemungkinan: str
+    detail: Optional[str]
+    saran: Optional[str]
+    gambar: Optional[str]
+
 @router.post("/diagnosis")
 async def diagnosis(
     user: user_dependency, diagnosis_request: DiagnosisRequest, db: db_dependency
@@ -43,6 +48,7 @@ async def diagnosis(
     for penyakit in db.query(Penyakit).all():
         cf_total_temp = Decimal(0)
         cf_total_temp = cf_total_temp.quantize(Decimal('0.00'))
+        gejala_penyakit = []  # Menyimpan gejala untuk setiap penyakit
         for gejala in kondisi:
             gejala_id = gejala['gejala_id']
             bobot = Decimal(gejala['bobot']).quantize(Decimal('0.00')) # Konversi bobot menjadi Decimal
@@ -62,17 +68,43 @@ async def diagnosis(
                 elif (cf < 0) and (cf * cf_total_temp >= 0):
                     cf_total_temp += cf * (1 + cf_total_temp)
 
+                gejala_obj = db.query(Gejala).filter(Gejala.id == gejala_id).first()
+                gejala_penyakit.append(gejala_obj.nama)
+
         if cf_total_temp > threshold:
             # Membatasi hanya dua angka di belakang koma
             cf_total_temp = cf_total_temp.quantize(Decimal('0.00'))
-            penyakit_cf[penyakit.nama] = cf_total_temp
+            penyakit_cf[penyakit.nama] = {
+                "gejala": gejala_penyakit,
+                "kemungkinan": round(float(cf_total_temp) * 100, 2),  # Ubah ke persentase
+                "detail": penyakit.detail,
+                "saran": penyakit.saran,
+                "gambar": penyakit.gambar
+            }
+            
+            # Simpan hasil perhitungan ke dalam tabel Hasil
+            hasil = Hasil(
+                penyakit=penyakit.nama,
+                gejala=', '.join(gejala_penyakit),
+                nilai=f"{round(float(cf_total_temp) * 100, 2)}%",  # Ubah ke persentase
+                tanggal=datetime.now()
+            )
+            db.add(hasil)
+            db.commit()
     
     # Urutkan penyakit berdasarkan keyakinan (CF) dari yang tertinggi
-    sorted_penyakit_cf = dict(sorted(penyakit_cf.items(), key=lambda item: item[1], reverse=True))
+    sorted_penyakit_cf = dict(sorted(penyakit_cf.items(), key=lambda item: item[1]["kemungkinan"], reverse=True))
 
     # Buat respons diagnosis
     diagnosis_response = []
-    for penyakit, keyakinan in sorted_penyakit_cf.items():
-        diagnosis_response.append(DiagnosisResponse(penyakit=penyakit, keyakinan=float(keyakinan)))
+    for penyakit, info in sorted_penyakit_cf.items():
+        diagnosis_response.append(DiagnosisResponse(
+            penyakit=penyakit,
+            gejala=info["gejala"],
+            kemungkinan=f"{info['kemungkinan']}%",
+            detail=info["detail"],
+            saran=info["saran"],
+            gambar=info["gambar"]
+        ))
 
     return diagnosis_response
