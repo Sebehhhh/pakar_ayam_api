@@ -28,6 +28,9 @@ class CreateUserRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    user_id: int
+    username: str
+    role_id: int
 
 def get_db():
     try:
@@ -83,7 +86,13 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         user.username, user.id, user.role_id, timedelta(minutes=60)
     )
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username,
+        "role_id": user.role_id
+    }
 
 @router.post("/logout")
 async def logout(current_user: dict = Depends(get_current_user)):
