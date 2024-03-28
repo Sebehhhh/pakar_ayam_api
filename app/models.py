@@ -54,3 +54,12 @@ class Hasil(Base):
     gejala = Column(Text, nullable=False)
     nilai = Column(String(16), nullable=False)
     tanggal = Column(DateTime, nullable=False)
+    
+class Post(Base):
+    __tablename__ = "post"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nama = Column(String(50), nullable=False)
+    detail = Column(Text, nullable=False)
+    saran = Column(Text, nullable=True)
+    gambar = Column(Text, nullable=True)
