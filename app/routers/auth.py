@@ -83,7 +83,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         )
 
     token = create_access_token(
-        user.username, user.id, user.role_id, timedelta(minutes=60)
+        user.username, user.id, user.role_id, timedelta(minutes=60*24)
     )
 
     return {
