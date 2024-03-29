@@ -60,13 +60,21 @@ async def read_all(user: user_dependency, db: db_dependency, response: Response)
 
     return response_data
 
-
 @router.post("/basis_pengetahuan/store")
 async def create_basis_pengetahuan(
     user: user_dependency, basis_pengetahuan_request: BasisPengetahuanRequest, db: db_dependency
 ):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
+
+    # Memeriksa apakah pasangan gejala dan penyakit sudah ada
+    existing_basis_pengetahuan = db.query(BasisPengetahuan).filter(
+        BasisPengetahuan.penyakit_id == basis_pengetahuan_request.penyakit_id,
+        BasisPengetahuan.gejala_id == basis_pengetahuan_request.gejala_id
+    ).first()
+
+    if existing_basis_pengetahuan:
+        raise HTTPException(status_code=400, detail="Basis Pengetahuan with the same penyakit_id and gejala_id already exists")
 
     basis_pengetahuan_model = BasisPengetahuan(**basis_pengetahuan_request.dict())
 
@@ -89,7 +97,18 @@ async def update_basis_pengetahuan(
     )
 
     if basis_pengetahuan_model is None:
-        raise http_exception()
+        raise HTTPException(status_code=404, detail="Basis Pengetahuan not found")
+
+    # Memeriksa apakah pasangan gejala dan penyakit sudah ada
+    existing_basis_pengetahuan = db.query(BasisPengetahuan).filter(
+        BasisPengetahuan.penyakit_id == basis_pengetahuan.penyakit_id,
+        BasisPengetahuan.gejala_id == basis_pengetahuan.gejala_id
+    ).filter(
+        BasisPengetahuan.id != basis_pengetahuan_id  # Untuk memungkinkan pembaruan data tanpa menghasilkan kesalahan validasi
+    ).first()
+
+    if existing_basis_pengetahuan:
+        raise HTTPException(status_code=400, detail="Basis Pengetahuan with the same penyakit_id and gejala_id already exists")
 
     basis_pengetahuan_model.penyakit_id = basis_pengetahuan.penyakit_id
     basis_pengetahuan_model.gejala_id = basis_pengetahuan.gejala_id
@@ -100,7 +119,6 @@ async def update_basis_pengetahuan(
     db.commit()
 
     return successful_response(200)
-
 @router.delete("/basis_pengetahuan/delete/{basis_pengetahuan_id}")
 async def delete_basis_pengetahuan(user: user_dependency, basis_pengetahuan_id: int, db: db_dependency):
     if user is None:
