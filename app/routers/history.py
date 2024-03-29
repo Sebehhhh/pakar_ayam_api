@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models import Hasil  # Menggunakan model Gejala yang telah diperbarui
 from app.database import SessionLocal
 from .auth import get_current_user
+from sqlalchemy import desc
 
 router = APIRouter()
 
@@ -23,4 +24,5 @@ async def read_all(user: user_dependency, db: db_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
-    return db.query(Hasil).all()
+    hasil = db.query(Hasil).order_by(desc(Hasil.tanggal)).all()
+    return hasil
