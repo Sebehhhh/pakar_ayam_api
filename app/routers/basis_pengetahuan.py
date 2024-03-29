@@ -1,11 +1,12 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.models import BasisPengetahuan
+from app.models import BasisPengetahuan, Gejala, Penyakit
 from app.database import SessionLocal
 from .auth import get_current_user
+from fastapi import Response
 
 router = APIRouter()
 
@@ -25,12 +26,40 @@ class BasisPengetahuanRequest(BaseModel):
     mb: float
     md: float
 
+from fastapi import Response
+
 @router.get("/basis_pengetahuan")
-async def read_all(user: user_dependency, db: db_dependency):
+async def read_all(user: user_dependency, db: db_dependency, response: Response):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
-    return db.query(BasisPengetahuan).all()
+    basis_pengetahuan_data = db.query(BasisPengetahuan).all()
+
+    # Membuat respons berisi data basis pengetahuan dengan gejala dan penyakit sesuai id
+    response_data = []
+    for basis_pengetahuan in basis_pengetahuan_data:
+        gejala = db.query(Gejala).filter(Gejala.id == basis_pengetahuan.gejala_id).first()
+        penyakit = db.query(Penyakit).filter(Penyakit.id == basis_pengetahuan.penyakit_id).first()
+
+        if gejala and penyakit:
+            response_data.append({
+                "id": basis_pengetahuan.id,
+                "penyakit": {
+                    "id": penyakit.id,
+                    "nama": penyakit.nama,
+                    # tambahkan atribut lain yang dibutuhkan
+                },
+                "gejala": {
+                    "id": gejala.id,
+                    "nama": gejala.nama,
+                    # tambahkan atribut lain yang dibutuhkan
+                },
+                "mb": basis_pengetahuan.mb,
+                "md": basis_pengetahuan.md,
+            })
+
+    return response_data
+
 
 @router.post("/basis_pengetahuan/store")
 async def create_basis_pengetahuan(
