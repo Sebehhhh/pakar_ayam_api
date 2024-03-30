@@ -23,7 +23,6 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 class DiagnosisRequest(BaseModel):
     kondisi: list
     threshold: float = Field(..., description="Threshold for diagnosis")
-
 class DiagnosisResponse(BaseModel):
     penyakit: str
     gejala: List[str]
@@ -31,6 +30,7 @@ class DiagnosisResponse(BaseModel):
     detail: Optional[str]
     saran: Optional[str]
     gambar: Optional[str]
+    request_data: DiagnosisRequest  # Menyimpan data permintaan diagnosa
 
 @router.post("/diagnosis")
 async def diagnosis(
@@ -104,7 +104,8 @@ async def diagnosis(
             kemungkinan=f"{info['kemungkinan']}%",
             detail=info["detail"],
             saran=info["saran"],
-            gambar=info["gambar"]
+            gambar=info["gambar"],
+            request_data=diagnosis_request  # Masukkan data permintaan diagnosa ke respons
         ))
 
     return diagnosis_response
