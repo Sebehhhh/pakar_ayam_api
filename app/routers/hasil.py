@@ -31,7 +31,6 @@ class DiagnosisResponse(BaseModel):
     saran: Optional[str]
     gambar: Optional[str]
     request_data: DiagnosisRequest  # Menyimpan data permintaan diagnosa
-
 @router.post("/diagnosis")
 async def diagnosis(
     user: user_dependency, diagnosis_request: DiagnosisRequest, db: db_dependency
@@ -43,6 +42,12 @@ async def diagnosis(
     threshold = diagnosis_request.threshold
 
     penyakit_cf = {}  # dictionary untuk menyimpan CF penyakit
+
+    # Mendapatkan daftar gejala dari database
+    gejala_dict = {}
+    for gejala in db.query(Gejala).all():
+        gejala_dict[str(gejala.id)] = gejala.nama  # Menggunakan ID sebagai string untuk memastikan kesesuaian dengan kunci dalam data permintaan
+
 
     # Hitung CF untuk setiap penyakit berdasarkan gejala
     for penyakit in db.query(Penyakit).all():
@@ -98,6 +103,11 @@ async def diagnosis(
     # Buat respons diagnosis
     diagnosis_response = []
     for penyakit, info in sorted_penyakit_cf.items():
+        # Ubah ID gejala menjadi nama gejala
+        gejala_with_name = [{'gejala_id': gejala_id, 'bobot': bobot, 'nama_gejala': gejala_dict[gejala_id]} 
+                            for gejala_id, bobot in zip([gejala['gejala_id'] for gejala in kondisi], 
+                                                        [gejala['bobot'] for gejala in kondisi])]
+        diagnosis_request_with_name = DiagnosisRequest(kondisi=gejala_with_name, threshold=diagnosis_request.threshold)
         diagnosis_response.append(DiagnosisResponse(
             penyakit=penyakit,
             gejala=info["gejala"],
@@ -105,7 +115,8 @@ async def diagnosis(
             detail=info["detail"],
             saran=info["saran"],
             gambar=info["gambar"],
-            request_data=diagnosis_request  # Masukkan data permintaan diagnosa ke respons
+            request_data=diagnosis_request_with_name  # Masukkan data permintaan diagnosa ke respons
         ))
 
     return diagnosis_response
+

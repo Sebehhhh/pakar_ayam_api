@@ -40,12 +40,6 @@ class BasisPengetahuan(Base):
     mb = Column(Float(11, 1))
     md = Column(Float(11, 1))
     
-class Kondisi(Base):
-    __tablename__ = "kondisi"
-
-    id = Column(Integer, primary_key=True, index=True)
-    kondisi = Column(String(64), nullable=False)
-    
 class Hasil(Base):
     __tablename__ = "hasil"
 
