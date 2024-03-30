@@ -40,11 +40,3 @@ class BasisPengetahuan(Base):
     mb = Column(Float(11, 1))
     md = Column(Float(11, 1))
     
-class Post(Base):
-    __tablename__ = "post"
-
-    id = Column(Integer, primary_key=True, index=True)
-    nama = Column(String(50), nullable=False)
-    detail = Column(Text, nullable=False)
-    saran = Column(Text, nullable=True)
-    gambar = Column(Text, nullable=True)
