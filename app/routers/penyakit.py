@@ -46,6 +46,23 @@ async def create_penyakit(
 
     return successful_response(201)
 
+@router.get("/penyakit/{penyakit_id}")
+async def get_penyakit_by_id(user: user_dependency, penyakit_id: int, db: db_dependency):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Authentication Failed")
+
+    penyakit_model = (
+        db.query(Penyakit)
+        .filter(Penyakit.id == penyakit_id)
+        .first()
+    )
+
+    if penyakit_model is None:
+        raise HTTPException(status_code=404, detail="Penyakit not found")
+
+    return penyakit_model
+
+
 @router.put("/penyakit/update/{penyakit_id}")
 async def update_penyakit(
     user: user_dependency, penyakit_id: int, penyakit: PenyakitRequest, db: db_dependency
@@ -70,7 +87,7 @@ async def update_penyakit(
     db.add(penyakit_model)
     db.commit()
 
-    return successful_response(200)
+    return successful_response(201)
 
 @router.delete("/penyakit/delete/{penyakit_id}")
 async def delete_penyakit(user: user_dependency, penyakit_id: int, db: db_dependency):
@@ -84,12 +101,14 @@ async def delete_penyakit(user: user_dependency, penyakit_id: int, db: db_depend
     )
 
     if penyakit_model is None:
-        raise http_exception()
+        raise HTTPException(status_code=404, detail="Penyakit not found")
 
+    gambar = penyakit_model.gambar  # Menyimpan nama penyakit yang dihapus
     db.query(Penyakit).filter(Penyakit.id == penyakit_id).delete()
     db.commit()
 
-    return successful_response(200)
+    return {"status_code": 200, "message": "Penyakit deleted successfully", "gambar": gambar}
+
 
 def successful_response(status_code: int):
     return {"status": status_code, "transaction": "Successful"}
