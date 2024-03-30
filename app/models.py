@@ -40,15 +40,6 @@ class BasisPengetahuan(Base):
     mb = Column(Float(11, 1))
     md = Column(Float(11, 1))
     
-class Hasil(Base):
-    __tablename__ = "hasil"
-
-    id = Column(Integer, primary_key=True, index=True)
-    penyakit = Column(Text, nullable=False)
-    gejala = Column(Text, nullable=False)
-    nilai = Column(String(16), nullable=False)
-    tanggal = Column(DateTime, nullable=False)
-    
 class Post(Base):
     __tablename__ = "post"
 

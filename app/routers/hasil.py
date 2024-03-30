@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from datetime import datetime
-from app.models import BasisPengetahuan, Penyakit, Gejala, Hasil  # Tambahkan model Hasil
+from app.models import BasisPengetahuan, Penyakit, Gejala  # Tambahkan model Hasil
 from app.database import SessionLocal
 from .auth import get_current_user
 
@@ -86,16 +86,6 @@ async def diagnosis(
                 "saran": penyakit.saran,
                 "gambar": penyakit.gambar
             }
-            
-            # Simpan hasil perhitungan ke dalam tabel Hasil
-            hasil = Hasil(
-                penyakit=penyakit.nama,
-                gejala=', '.join(gejala_penyakit),
-                nilai=f"{round(float(cf_total_temp) * 100, 2)}%",  # Ubah ke persentase
-                tanggal=datetime.now()
-            )
-            db.add(hasil)
-            db.commit()
     
     # Urutkan penyakit berdasarkan keyakinan (CF) dari yang tertinggi
     sorted_penyakit_cf = dict(sorted(penyakit_cf.items(), key=lambda item: item[1]["kemungkinan"], reverse=True))
