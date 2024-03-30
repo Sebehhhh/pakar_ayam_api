@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import app.models as models
 from app.database import engine
-from app.routers import auth, gejala, users, role, post, penyakit, basis_pengetahuan, hasil # Merubah users menjadi user
+from app.routers import auth, gejala, users, role, penyakit, basis_pengetahuan, hasil # Merubah users menjadi user
 
 app = FastAPI()
 
