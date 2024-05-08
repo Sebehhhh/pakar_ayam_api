@@ -14,19 +14,19 @@ class Gejala(Base):
     __tablename__ = "gejala"
 
     id = Column(Integer, primary_key=True, index=True)
-    nama = Column(String(50), nullable=False)
+    nama = Column(String(50), nullable=False,unique=True)
 
 class Role(Base):
     __tablename__ = "role"
 
     id = Column(Integer, primary_key=True, index=True)
-    role = Column(String(30), nullable=False)
+    role = Column(String(30), nullable=False,unique=True)
     
 class Penyakit(Base):
     __tablename__ = "penyakit"
 
     id = Column(Integer, primary_key=True, index=True)
-    nama = Column(String(50), nullable=False)
+    nama = Column(String(50), nullable=False,unique=True)
     detail = Column(Text, nullable=False)
     saran = Column(Text, nullable=True)
     gambar = Column(Text, nullable=True)

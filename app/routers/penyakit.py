@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.models import Penyakit  # Menggunakan model Penyakit yang telah diperbarui
 from app.database import SessionLocal
@@ -39,12 +39,19 @@ async def create_penyakit(
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
-    penyakit_model = Penyakit(**penyakit_request.dict())
+    # Cek apakah nama penyakit sudah tersedia
+    existing_penyakit = db.query(Penyakit).filter(Penyakit.nama == penyakit_request.nama).first()
+    if existing_penyakit:
+        # Nama penyakit sudah ada, kembalikan respons yang sesuai
+        raise HTTPException(status_code=400, detail="Nama penyakit sudah tersedia")
 
+    # Nama penyakit belum ada, lanjutkan dengan proses penyimpanan
+    penyakit_model = Penyakit(**penyakit_request.dict())
     db.add(penyakit_model)
     db.commit()
 
     return successful_response(201)
+
 
 @router.get("/penyakit/{penyakit_id}")
 async def get_penyakit_by_id(user: user_dependency, penyakit_id: int, db: db_dependency):
@@ -79,6 +86,13 @@ async def update_penyakit(
     if penyakit_model is None:
         raise http_exception()
 
+    # Cek apakah nama penyakit yang baru dimasukkan sudah ada kecuali jika itu adalah nama penyakit yang sedang diupdate
+    existing_penyakit = db.query(Penyakit).filter(Penyakit.nama == penyakit.nama, Penyakit.id != penyakit_id).first()
+    if existing_penyakit:
+        # Nama penyakit sudah ada, kembalikan respons yang sesuai
+        raise HTTPException(status_code=400, detail="Nama penyakit sudah tersedia")
+
+    # Update atribut penyakit
     penyakit_model.nama = penyakit.nama
     penyakit_model.detail = penyakit.detail
     penyakit_model.saran = penyakit.saran
