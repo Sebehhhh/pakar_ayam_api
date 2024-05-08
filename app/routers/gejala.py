@@ -36,12 +36,19 @@ async def create_gejala(
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
-    gejala_model = Gejala(**gejala_request.dict())
+    # Cek apakah gejala yang baru dimasukkan sudah ada
+    existing_gejala = db.query(Gejala).filter(Gejala.nama == gejala_request.nama).first()
+    if existing_gejala:
+        # Gejala sudah ada, kembalikan respons yang sesuai
+        raise HTTPException(status_code=400, detail="Gejala sudah tersedia")
 
+    # Gejala belum ada, lanjutkan dengan proses penyimpanan
+    gejala_model = Gejala(**gejala_request.dict())
     db.add(gejala_model)
     db.commit()
 
     return successful_response(201)
+
 
 @router.put("/gejala/update/{gejala_id}")
 async def update_gejala(
@@ -57,8 +64,15 @@ async def update_gejala(
     )
 
     if gejala_model is None:
-        raise http_exception()
+        raise HTTPException(status_code=404, detail="Gejala not found")
 
+    # Cek apakah gejala yang baru dimasukkan sudah ada kecuali jika itu adalah gejala yang sedang diupdate
+    existing_gejala = db.query(Gejala).filter(Gejala.nama == gejala.nama, Gejala.id != gejala_id).first()
+    if existing_gejala:
+        # Gejala sudah ada, kembalikan respons yang sesuai
+        raise HTTPException(status_code=400, detail="Gejala sudah tersedia")
+
+    # Update atribut gejala
     gejala_model.nama = gejala.nama
 
     db.add(gejala_model)
